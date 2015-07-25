@@ -2,19 +2,65 @@ package com.github.sevntu.checkstyle.checks.whitespace;
 
 import com.github.sevntu.checkstyle.BaseCheckTestSupport;
 import com.puppycrawl.tools.checkstyle.DefaultConfiguration;
+import java.io.File;
+import java.io.FileFilter;
+import java.io.FilenameFilter;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import org.junit.Test;
 
 public class SingleSpaceSeparatorCheckTest extends BaseCheckTestSupport {
 
     private final String message = getCheckMessage(SingleSpaceSeparatorCheck.MSG_KEY);
 
+    public static File currentFileToCheck = null;
+
+    private List<File> getAllJavaFiles(File folder) {
+        List<File> files = new ArrayList<>();
+
+        File[] javaFiles = folder.listFiles(new FilenameFilter() {
+
+            @Override
+            public boolean accept(File dir, String name) {
+                return name.endsWith(".java");
+            }
+        });
+        files.addAll(Arrays.asList(javaFiles));
+
+        File[] folders = folder.listFiles(new FileFilter() {
+
+            @Override
+            public boolean accept(File pathname) {
+                return pathname.isDirectory();
+            }
+        });
+
+        for (File childFolder : folders) {
+            files.addAll(getAllJavaFiles(childFolder));
+        }
+
+        return files;
+    }
+
     @Test
+    public void testSventuCheckstyleProject() throws Exception {
+        final DefaultConfiguration checkConfig = createCheckConfig(SingleSpaceSeparatorCheck.class);
+        List<File> javaFiles = getAllJavaFiles(new File("/home/robert/Projects/sevntu.checkstyle/sevntu-checks/src/main/java/com/github/sevntu/checkstyle"));
+        for (File javaFile : javaFiles) {
+            SingleSpaceSeparatorCheck.currentFile = javaFile;
+            System.out.println(javaFile);
+            verify(checkConfig, javaFile.getAbsolutePath(), new String[0]);
+        }
+    }
+
+//    @Test
     public void testNoSpaceErrors() throws Exception {
         final DefaultConfiguration checkConfig = createCheckConfig(SingleSpaceSeparatorCheck.class);
         verify(checkConfig, getPath("SingleNoSpaceErrors.java"), new String[0]);
     }
 
-    @Test
+//    @Test
     public void testSpaceErrors() throws Exception {
         final DefaultConfiguration checkConfig = createCheckConfig(SingleSpaceSeparatorCheck.class);
         String[] expected = {
