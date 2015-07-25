@@ -79,14 +79,15 @@ public class SingleSpaceSeparatorCheck extends Check {
 
     private void checkComment(DetailAST ast) {
         if (ast.getParent().getType() == TokenTypes.SINGLE_LINE_COMMENT) {
-            checkCommentLine(ast, removeTrailingWhitespaces(ast.getText()),
-                    0, singleCommentColumnOffset);
+            String line = ast.getText();
+            checkCommentLine(ast, line.trim(),
+                    0, line.length() - removeLeadingWhitespaces(line).length() + singleCommentColumnOffset);
         } else if (ast.getParent().getType() == TokenTypes.BLOCK_COMMENT_BEGIN) {
             String[] lines = ast.getText().split("\n");
             for (int lineIndex = 0; lineIndex < lines.length; lineIndex++) {
                 String line = lines[lineIndex];
-                checkCommentLine(ast, line.trim(), lineIndex,
-                        line.length() - removeLeadingWhitespaces(line).length() + blockCommentColumnOffset);
+                checkCommentLine(ast, removeLeadingBlockComment(line.trim()), lineIndex,
+                        line.length() - removeLeadingBlockComment(line).length() + blockCommentColumnOffset);
             }
         }
     }
@@ -99,12 +100,16 @@ public class SingleSpaceSeparatorCheck extends Check {
         }
     }
 
-    private String removeTrailingWhitespaces(String text) {
-        return text.replaceFirst("\\s+$", "");
+    private String removeLeadingBlockComment(String line) {
+        return line.replaceFirst("^\\s*\\*\\s*", "");
     }
 
     private String removeLeadingWhitespaces(String text) {
         return text.replaceFirst("^\\s+", "");
+    }
+
+    private String removeTrailingWhitespaces(String text) {
+        return text.replaceFirst("\\s+$", "");
     }
 
     private void report(DetailAST ast, int lineNo, int columnNo) {
